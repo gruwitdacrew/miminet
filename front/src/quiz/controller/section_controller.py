@@ -10,7 +10,6 @@ from quiz.service.section_service import (
     get_deleted_sections_by_test,
     delete_section,
     edit_section,
-    get_section,
     publish_or_unpublish_test_by_section,
 )
 from quiz.service.test_service import get_test

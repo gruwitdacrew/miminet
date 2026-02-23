@@ -137,7 +137,7 @@ def session_result_endpoint():
         return make_response("Error", status)
 
     return make_response(
-        render_template("quiz/userSessionResult.html", data=res), status
+        render_template("quiz/userSessionResult.html", data=res, returnToLtiPlatformUrl=session.get("returnToLtiPlatformUrl"))
     )
 
 

@@ -300,16 +300,31 @@ async function answerQuestion() {
         return;
     }
 
-    fetch(answerQuestionURL + '?id=' + questionId, {
+        const fetchOptions = {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({ answer })
-    })
+    };
+
+    if (returnToLtiPlatformUrl && returnToLtiPlatformUrl !== 'None') {
+        fetchOptions.keepalive = true;
+
+        fetch(answerQuestionURL + '?id=' + questionId, fetchOptions);
+        finishQuiz();
+        
+        setTimeout(() => {
+            window.location.href = returnToLtiPlatformUrl;
+        }, 500);
+        
+        return;
+    }
+
+    fetch(answerQuestionURL + '?id=' + questionId, fetchOptions)
     .then(response => response.json())
     .then(data => {
-        sessionStorage.setItem('answer', JSON.stringify(answer)); // Сохраняем факт ответа
+        sessionStorage.setItem('answer', JSON.stringify(answer));
 
         if (questionType === "practice") {
             handlePracticeAnswerResult(data);

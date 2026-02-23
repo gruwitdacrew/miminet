@@ -35,6 +35,7 @@ from miminet_auth import (
     lti_login,
     lti_callback
 )
+import lti.lti_provider as lti
 from miminet_config import SECRET_KEY
 from miminet_host import (
     delete_job,
@@ -97,7 +98,7 @@ from quiz.entity.entity import (
     SessionQuestion,
 )
 
-from lti.lti_support import get_jwks, cache
+from lti.lti_provider import get_jwks, cache
 
 from quiz.controller.image_controller import image_routes
 
@@ -228,7 +229,7 @@ app.add_url_rule(
 app.add_url_rule('/quiz/sections/<section>', methods=["GET", "POST"], view_func=get_section_endpoint)
 
 app.add_url_rule(
-    "/quiz/question/create", methods=["POST"], view_func=create_question_endpoint
+    "/quiz/question/create", methods=["GET", "POST"], view_func=create_question_endpoint
 )
 
 app.add_url_rule(

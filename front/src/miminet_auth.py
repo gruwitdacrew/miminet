@@ -17,7 +17,7 @@ from flask_login import (
     login_user,
     logout_user,
 )
-import lti.lti_support as lti
+import lti.lti_provider as lti
 from google.oauth2 import id_token
 from google_auth_oauthlib.flow import Flow
 from requests_oauthlib import OAuth2Session
