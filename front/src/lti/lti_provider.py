@@ -7,7 +7,7 @@ from pylti1p3.contrib.flask import FlaskOIDCLogin, FlaskRequest, FlaskCacheDataS
 from pylti1p3.tool_config import ToolConfJsonFile
 from lti.lti_actions.base import ExtendedFlaskMessageLaunch
 
-from lti.lti_actions import ActionHandlerFactory, ActionResultSenderFactory
+from lti.lti_actions.factory import ActionHandlerFactory, ActionResultSenderFactory
 
 cache = Cache() 
 
