@@ -39,6 +39,13 @@ const HostWarningMsg = function (msg) {
 
     $(config_content_id).prepend(warning_msg);
 }
+const SwitchWarningMsg = function (msg) {
+
+    let warning_msg = '<div class="alert alert-info alert-dismissible fade show" role="alert">' +
+        msg + '<button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+
+    $(config_content_id).prepend(warning_msg);
+}
 
 const ServerWarningMsg = function (msg) {
 
@@ -48,9 +55,53 @@ const ServerWarningMsg = function (msg) {
     $(config_content_id).prepend(warning_msg);
 }
 
+const HostErrorMsg = function (msg) {
+
+    $(config_content_id).find('.alert-info, .alert-danger').remove();
+
+    let error_msg = '<div class="alert alert-info alert-dismissible fade show" role="alert">' +
+        msg + '<button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close"></button></div>';
+
+    $(config_content_id).prepend(error_msg);
+
+    $("#config_main_form :input").prop("disabled", false);
+    $("#config_router_main_form :input").prop("disabled", false);
+    $("#config_server_main_form :input").prop("disabled", false);
+    $("config_switch_main_form :input").prop("disabled", false)
+
+    $('#config_host_main_form_submit_button').text('Сохранить').removeClass('disabled');
+    $('#config_router_main_form_submit_button').text('Сохранить').removeClass('disabled');
+    $('#config_server_main_form_submit_button').text('Сохранить').removeClass('disabled');
+    $('#config_switch_main_form_submit_button').text('Сохранить').removeClass('disabled');
+}
+
+const UpdateJobCounter = function (counterId, deviceId = null) {
+    const counter = document.getElementById(counterId);
+    if (!counter) {
+        return;
+    }
+
+    counter.style.display = 'none';
+}
+
+const UpdateHostConfigurationForm = function(host_id) {
+    let data = $('#config_main_form').serialize();
+
+    // Disable all input fields
+    $("#config_main_form :input").prop("disabled", true);
+
+    // Set loading spinner
+    $('#config_host_main_form_submit_button').text('');
+    $('#config_host_main_form_submit_button').append('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span class="ps-3">Сохранение...</span>');
+
+    // Use unified delete and save function
+    DeleteAndSaveJob('host', UpdateHostConfiguration, data, host_id);
+};
+
 const ConfigHostForm = function(host_id){
     var form = document.getElementById('config_host_main_form_script').innerHTML;
     var button = document.getElementById('config_host_save_script').innerHTML;
+    var banner = document.getElementById('config_host_edit_banner_script').innerHTML;
 
     // Clear all child
     $(config_content_id).empty();
@@ -60,6 +111,7 @@ const ConfigHostForm = function(host_id){
 
     // Add new form
     $(config_content_id).append(form);
+    $(config_content_id).append(banner);
     $(config_content_save_tag).append(button);
 
     addIpFieldHandlers();
@@ -70,16 +122,7 @@ const ConfigHostForm = function(host_id){
 
     function handleHostClick(event) {
         event.preventDefault();
-        let data = $('#config_main_form').serialize();
-
-        // Disable all input fields
-        $("#config_main_form :input").prop("disabled", true);
-
-        // Set loading spinner
-        $('#config_host_main_form_submit_button').text('');
-        $('#config_host_main_form_submit_button').append('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span class="ps-3">Сохранение...</span>');
-
-        UpdateHostConfiguration(data, host_id);
+        UpdateHostConfigurationForm(host_id);
     }
 
     $('#config_host_main_form_submit_button, #config_host_end_form').on('click', handleHostClick);
@@ -88,6 +131,7 @@ const ConfigHostForm = function(host_id){
 const ConfigRouterForm = function (router_id) {
     var form = document.getElementById('config_router_main_form_script').innerHTML;
     var button = document.getElementById('config_router_save_script').innerHTML;
+    var banner = document.getElementById('config_router_edit_banner_script').innerHTML;
 
     // Clear all child
     $(config_content_id).empty();
@@ -97,6 +141,7 @@ const ConfigRouterForm = function (router_id) {
 
     // Add new form
     $(config_content_id).append(form);
+    $(config_content_id).append(banner);
     $(config_content_save_tag).append(button);
 
     addIpFieldHandlers();
@@ -116,7 +161,8 @@ const ConfigRouterForm = function (router_id) {
         $('#config_router_main_form_submit_button').text('');
         $('#config_router_main_form_submit_button').append('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span class="ps-3">Сохранение...</span>');
 
-        UpdateRouterConfiguration(data, router_id);
+        // Use unified delete and save function
+        DeleteAndSaveJob('router', UpdateRouterConfiguration, data, router_id);
     }
 
     $('#config_router_main_form_submit_button, #config_router_end_form').on('click', handleRouterClick);
@@ -125,6 +171,7 @@ const ConfigRouterForm = function (router_id) {
 const ConfigServerForm = function (server_id) {
     var form = document.getElementById('config_server_main_form_script').innerHTML;
     var button = document.getElementById('config_server_save_script').innerHTML;
+    var banner = document.getElementById('config_server_edit_banner_script').innerHTML;
 
     // Clear all child
     $(config_content_id).empty();
@@ -134,6 +181,7 @@ const ConfigServerForm = function (server_id) {
 
     // Add new form
     $(config_content_id).append(form);
+    $(config_content_id).append(banner);
     $(config_content_save_tag).append(button);
 
     addIpFieldHandlers();
@@ -153,7 +201,8 @@ const ConfigServerForm = function (server_id) {
         $('#config_server_main_form_submit_button').text('');
         $('#config_server_main_form_submit_button').append('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span class="ps-3">Сохранение...</span>');
 
-        UpdateServerConfiguration(data, server_id);
+        // Use unified delete and save function
+        DeleteAndSaveJob('server', UpdateServerConfiguration, data, server_id);
     }
 
     $('#config_server_main_form_submit_button, #config_server_end_form').on('click', handleServerClick);
@@ -232,7 +281,7 @@ const ConfigSwitchForm = function (switch_id) {
         $('#config_switch_main_form_submit_button').text('');
         $('#config_switch_main_form_submit_button').append('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span class="ps-3">Сохранение...</span>');
 
-        UpdateSwitchConfiguration(data, switch_id);
+        DeleteAndSaveJob('switch', UpdateSwitchConfiguration, data, switch_id);
     }
 
     $('#config_switch_main_form_submit_button, #config_switch_end_form').on('click', handleSwitchClick);
@@ -269,11 +318,13 @@ const ConfigEdgeForm = function (edge_id) {
         const edge = edges.find(e => e.data.id === edge_id);
         console.log(edge);
         const lossValue = $("#edge_loss").val();
+        const duplicateValue = $("#edge_duplicate").val();
 
-        if (edge)
+        if (edge) {
             edge.data.loss_percentage = lossValue;
-
-        const inputsToDisable = $('#edge_loss, #config_edge_main_form_submit_button');
+            edge.data.duplicate_percentage = duplicateValue;
+        }
+        const inputsToDisable = $('#edge_loss, #edge_duplicate, #config_edge_main_form_submit_button');
         inputsToDisable.prop("disabled", true);
 
         $('#config_edge_main_form_submit_button').html(
@@ -295,13 +346,12 @@ const ConfigHubName = function (hostname) {
     $('#config_hub_name').val(hostname);
 }
 
-const ConfigEdgePercentage = function (edge_loss) {
-
-    var text = document.getElementById('config_edge_save_loss_script').innerHTML;
-
+const ConfigEdgeNetworkIssues = function (edge_loss, edge_duplicate) {
+    var text = document.getElementById('config_edge_set_network_issues_script').innerHTML;
     $(config_edge_main_form_id).prepend(text);
     $('#edge_loss').val(edge_loss);
-}
+    $('#edge_duplicate').val(edge_duplicate);
+};
 
 const ConfigEdgeEndpoints = function (edge_source, edge_target) {
 
@@ -443,7 +493,7 @@ const SharedConfigEdgeForm = function (edge_id) {
     // Clear all child
     $(config_content_id).empty();
     $(config_content_save_tag).empty();
-    document.getElementById(config_content_save_id).style.display='none';
+    document.getElementById(config_content_save_id).style.display='block';
 
     // Add new form
     $(config_content_id).append(form);
@@ -543,15 +593,27 @@ const ConfigSwitchIndent = function () {
 const addIpFieldHandlers = function () {
     document.addEventListener('input', function (e) {
         const input = e.target;
- 
-        if (!input.matches('input[type="text"][id*="ip"], input[type="text"][name*="ip"]')) {
+
+        if (!input.matches('input[type="text"][id*="ip"], input[type="text"][name*="ip"], input[type="text"][id*="gw"], input[type="text"][name*="gw"]')) {
             return;
         }
- 
+
         const newValue = input.value.replace(/,/g, '.').replace(/ю/g, '.');
- 
+
         input.value = newValue;
     });
+};
+
+const UpdateHostForm = function(name) {
+    elem = document.getElementById(name).innerHTML;
+    host_job_list = document.getElementById('config_host_job_list');
+
+    if (!elem || !host_job_list) {
+        return;
+    }
+
+    $('div[name="config_host_select_input"]').remove();
+    $(elem).insertBefore(host_job_list);
 };
 
 const ConfigHostJobOnChange = function (evnt) {
@@ -561,87 +623,36 @@ const ConfigHostJobOnChange = function (evnt) {
 
     switch (evnt.target.value) {
         case '1':
-            elem = document.getElementById('config_host_ping_c_1_script').innerHTML;
-            host_job_list = document.getElementById('config_host_job_list');
-
-            if (!elem || !host_job_list) {
-                return;
-            }
-
-            $('div[name="config_host_select_input"]').remove();
-            $(elem).insertBefore(host_job_list);
+            UpdateHostForm('config_host_ping_c_1_script');
             break;
 
         case '2':
-            elem = document.getElementById('config_host_ping_with_options_script').innerHTML;
-            host_job_list = document.getElementById('config_host_job_list');
-
-            if (!elem || !host_job_list) {
-                return;
-            }
-
-            $('div[name="config_host_select_input"]').remove();
-            $(elem).insertBefore(host_job_list);
+            UpdateHostForm('config_host_ping_with_options_script');
             break;
 
         case '3':
-            elem = document.getElementById('config_host_send_udp_data_script').innerHTML;
-            host_job_list = document.getElementById('config_host_job_list');
-
-            if (!elem || !host_job_list) {
-                return;
-            }
-
-            $('div[name="config_host_select_input"]').remove();
-            $(elem).insertBefore(host_job_list);
+            UpdateHostForm('config_host_send_udp_data_script');
             break;
 
         case '4':
-            elem = document.getElementById('config_host_send_tcp_data_script').innerHTML;
-            host_job_list = document.getElementById('config_host_job_list');
-
-            if (!elem || !host_job_list) {
-                return;
-            }
-
-            $('div[name="config_host_select_input"]').remove();
-            $(elem).insertBefore(host_job_list);
+            UpdateHostForm('config_host_send_tcp_data_script');
             break;
 
         case '5':
-            elem = document.getElementById('config_host_traceroute_with_options_script').innerHTML;
-            host_job_list = document.getElementById('config_host_job_list');
-
-            if (!elem || !host_job_list) {
-                return;
-            }
-
-            $('div[name="config_host_select_input"]').remove();
-            $(elem).insertBefore(host_job_list);
+            UpdateHostForm('config_host_traceroute_with_options_script');
             break;
 
         case '102':
-            elem = document.getElementById('config_host_add_route_script').innerHTML;
-            host_job_list = document.getElementById('config_host_job_list');
-
-            if (!elem || !host_job_list) {
-                return;
-            }
-
-            $('div[name="config_host_select_input"]').remove();
-            $(elem).insertBefore(host_job_list);
+            UpdateHostForm('config_host_add_route_script');
             break;
 
         case '103':
-            elem = document.getElementById('config_host_add_arp_cache_script').innerHTML;
-            host_job_list = document.getElementById('config_host_job_list');
-
-            if (!elem || !host_job_list) {
-                return;
-            }
-
-            $('div[name="config_host_select_input"]').remove();
-            $(elem).insertBefore(host_job_list);
+            UpdateHostForm('config_host_add_arp_cache_script');
+            break;
+        
+        case '108':
+            UpdateHostForm('config_host_add_dhclient');
+            FillDeviceSelectIntf('#config_host_add_dhclient_interface_select_iface_field', '#host_id', "Выберите линк", false)
             break;
 
         case '0':
@@ -667,6 +678,9 @@ const ConfigHostJob = function (host_jobs, shared = 0) {
 
     // Set onchange
     document.getElementById('config_host_job_select_field').addEventListener('change', ConfigHostJobOnChange);
+
+    // Update job counter with device ID
+    UpdateJobCounter('config_host_job_counter', host_id.value);
 
     elem = document.getElementById('config_host_job_list_script').innerHTML;
     if (!elem) {
@@ -695,6 +709,7 @@ const ConfigHostJob = function (host_jobs, shared = 0) {
 
         let job_elem = jQuery.extend({}, elem);
         job_elem.innerHTML = job_elem.innerHTML.replace(/config_host_job_delete/g, 'config_host_job_delete_' + jid);
+        job_elem.innerHTML = job_elem.innerHTML.replace(/config_host_job_edit/g, 'config_host_job_edit_' + jid);
         job_elem.innerHTML = job_elem.innerHTML.replace(/justify-content-between align-items-center\">/, 'justify-content-between align-items-center\"><small>' + host_jobs[i].print_cmd + '</small>');
 
         let text = job_elem.innerHTML;
@@ -708,6 +723,12 @@ const ConfigHostJob = function (host_jobs, shared = 0) {
             }
         });
 
+        $('#config_host_job_edit_' + jid).click(function (event) {
+            event.preventDefault();
+            if (!shared) {
+                EditJobInHost(host_id.value, jid, network_guid);
+            }
+        });
     });
 }
 
@@ -735,6 +756,99 @@ const ConfigServerGateway = function (gw) {
     $('#config_server_default_gw').val(gw);
 }
 
+const UpdateSwitchForm = function(name) {
+    elem = document.getElementById(name).innerHTML;
+    switch_job_list = document.getElementById('config_switch_job_list');
+
+    if (!elem || !switch_job_list) {
+        return;
+    }
+
+    $('div[name="config_switch_select_input"]').remove();
+    $(elem).insertBefore(switch_job_list);
+};
+
+const ConfigSwitchJobOnChange = function(evnt) {
+    switch (evnt.target.value) {
+        case '0':
+            $('div[name="config_switch_select_input"]').remove();
+
+            break;
+        case '6':
+             UpdateSwitchForm('config_switch_link_down_script');
+             FillDeviceSelectIntf("#config_switch_link_down_iface_select_field", '#switch_id', "Выберите линк", false);
+            break;
+        case '7':
+            UpdateSwitchForm('config_switch_sleep_script');
+    }
+}
+const ConfigSwitchJob = function (switch_jobs, shared = 0) {
+
+    let elem = document.getElementById('config_switch_job_script').innerHTML;
+    let switch_id = document.getElementById('switch_id');
+
+    if (!elem || !switch_id) {
+        return;
+    }
+
+    $(elem).insertBefore(switch_id);
+
+    // Set onchange
+    document.getElementById('config_switch_job_select_field').addEventListener('change', ConfigSwitchJobOnChange);
+
+    // Update job counter with device ID
+    UpdateJobCounter('config_switch_job_counter', switch_id.value);
+
+    elem = document.getElementById('config_switch_job_list_script').innerHTML;
+    if (!elem) {
+        return;
+    }
+
+    $(elem).insertBefore(switch_id);
+
+    // Print jobs if we have
+    if (!switch_jobs) {
+        return;
+    }
+
+    $.each(switch_jobs, function (i) {
+        let jid = switch_jobs[i].id;
+
+        if (i == 0) {
+            $('#config_switch_job_list').append('<label class="text-sm">Команды</label>');
+        }
+
+        elem = document.getElementById('config_switch_job_list_elem_script');
+
+        if (!elem) {
+            return;
+        }
+
+        let job_elem = jQuery.extend({}, elem);
+        job_elem.innerHTML = job_elem.innerHTML.replace(/config_switch_job_delete/g, 'config_switch_job_delete_' + jid);
+        job_elem.innerHTML = job_elem.innerHTML.replace(/config_switch_job_edit/g, 'config_switch_job_edit_' + jid);
+        job_elem.innerHTML = job_elem.innerHTML.replace(/justify-content-between align-items-center\">/, 'justify-content-between align-items-center\"><small>' + switch_jobs[i].print_cmd + '</small>');
+
+        let text = job_elem.innerHTML;
+        //$(text).insertBefore(host_id);
+        $('#config_switch_job_list').append(text);
+
+        $('#config_switch_job_delete_' + jid).click(function (event) {
+            event.preventDefault();
+            if (!shared) {
+                DeleteJobFromSwitch(switch_id.value, jid, network_guid);
+            }
+        });
+
+        $('#config_switch_job_edit_' + jid).click(function (event) {
+            event.preventDefault();
+            if (!shared) {
+                EditJobInSwitch(switch_id.value, jid, network_guid);
+            }
+        });
+    });
+}
+
 const ConfigRouterJobOnChange = function(evnt) {
 
     switch (evnt.target.value) {
@@ -744,41 +858,47 @@ const ConfigRouterJobOnChange = function(evnt) {
             break;
         case '1':
             UpdateRouterForm('config_router_ping_c_1_script');
-        
+
             break;
         case '100':
             UpdateRouterForm('config_router_add_ip_mask_script');
-            FillRouterSelect("#config_router_add_ip_mask_iface_select_field", "Выберите линк", false);
+            FillDeviceSelectIntf("#config_router_add_ip_mask_iface_select_field", '#router_id', "Выберите линк", false);
         
             break;
         case '101':
             UpdateRouterForm('config_router_add_nat_masquerade_script');
-            FillRouterSelect("#config_router_add_nat_masquerade_iface_select_field", "Выберите линк", false);
+            FillDeviceSelectIntf("#config_router_add_nat_masquerade_iface_select_field", '#router_id', "Выберите линк", false);
 
             break;
         case '102':
             UpdateRouterForm('config_router_add_route_script');
 
-            break;  
+            break;
         case '104':
             UpdateRouterForm('config_router_add_subinterface_script');
-            FillRouterSelect("#config_router_add_subinterface_iface_select_field", "Выберите линк" ,false);
+            FillDeviceSelectIntf("#config_router_add_subinterface_iface_select_field", '#router_id', "Выберите линк" ,false);
 
             break;
         case '105':
             UpdateRouterForm('config_router_add_ipip_tunnel_script');
-            FillRouterSelect("#config_router_add_ipip_tunnel_iface_select_ip_field");
+            FillDeviceSelectIntf("#config_router_add_ipip_tunnel_iface_select_ip_field", '#router_id');
 
             break;
         case '106':
             UpdateRouterForm('config_router_add_gre_interface_script');
-            FillRouterSelect("#config_router_add_gre_interface_select_ip_field");
+            FillDeviceSelectIntf("#config_router_add_gre_interface_select_ip_field", '#router_id');
 
             break;
         case '107':
             UpdateRouterForm('config_router_add_arp_proxy_script');
-            FillRouterSelect("#config_router_add_arp_proxy_iface_select_field", "Выберите линк", false);
-
+            FillDeviceSelectIntf("#config_router_add_arp_proxy_iface_select_field", '#router_id', "Выберите линк", false);
+        case '109':
+            UpdateRouterForm('config_router_add_port_forwarding_tcp_script');
+            FillDeviceSelectIntf("#config_router_add_port_forwarding_tcp_iface_select_field", "#router_id", "Выберите линк", false)
+            break;
+        case '110':
+            UpdateRouterForm('config_router_add_port_forwarding_udp_script');
+            FillDeviceSelectIntf("#config_router_add_port_forwarding_udp_iface_select_field", "#router_id", "Выберите линк", false)
             break;
         default:
             console.log("Unknown target.value");
@@ -798,6 +918,9 @@ const ConfigRouterJob = function (router_jobs, shared = 0) {
 
     // Set onchange
     document.getElementById('config_router_job_select_field').addEventListener('change', ConfigRouterJobOnChange);
+
+    // Update job counter with device ID
+    UpdateJobCounter('config_router_job_counter', router_id.value);
 
     elem = document.getElementById('config_router_job_list_script').innerHTML;
     if (!elem) {
@@ -826,6 +949,7 @@ const ConfigRouterJob = function (router_jobs, shared = 0) {
 
         let job_elem = jQuery.extend({}, elem);
         job_elem.innerHTML = job_elem.innerHTML.replace(/config_router_job_delete/g, 'config_router_job_delete_' + jid);
+        job_elem.innerHTML = job_elem.innerHTML.replace(/config_router_job_edit/g, 'config_router_job_edit_' + jid);
         job_elem.innerHTML = job_elem.innerHTML.replace(/justify-content-between align-items-center\">/, 'justify-content-between align-items-center\"><small>' + router_jobs[i].print_cmd + '</small>');
 
         let text = job_elem.innerHTML;
@@ -836,6 +960,13 @@ const ConfigRouterJob = function (router_jobs, shared = 0) {
             event.preventDefault();
             if (!shared) {
                 DeleteJobFromRouter(router_id.value, jid, network_guid);
+            }
+        });
+
+        $('#config_router_job_edit_' + jid).click(function (event) {
+            event.preventDefault();
+            if (!shared) {
+                EditJobInRouter(router_id.value, jid, network_guid);
             }
         });
     });
@@ -854,6 +985,9 @@ const ConfigServerJob = function (server_jobs, shared = 0) {
 
     // Set onchange
     document.getElementById('config_server_job_select_field').addEventListener('change', ConfigServerJobOnChange);
+
+    // Update job counter with device ID
+    UpdateJobCounter('config_server_job_counter', server_id.value);
 
     elem = document.getElementById('config_server_job_list_script').innerHTML;
     if (!elem) {
@@ -882,6 +1016,7 @@ const ConfigServerJob = function (server_jobs, shared = 0) {
 
         let job_elem = jQuery.extend({}, elem);
         job_elem.innerHTML = job_elem.innerHTML.replace(/config_server_job_delete/g, 'config_server_job_delete_' + jid);
+        job_elem.innerHTML = job_elem.innerHTML.replace(/config_server_job_edit/g, 'config_server_job_edit_' + jid);
         job_elem.innerHTML = job_elem.innerHTML.replace(/justify-content-between align-items-center\">/, 'justify-content-between align-items-center\"><small>' + server_jobs[i].print_cmd + '</small>');
 
         let text = job_elem.innerHTML;
@@ -896,7 +1031,26 @@ const ConfigServerJob = function (server_jobs, shared = 0) {
             }
 
         });
+
+        $('#config_server_job_edit_' + jid).click(function (event) {
+            event.preventDefault();
+            if (!shared) {
+                EditJobInServer(server_id.value, jid, network_guid);
+            }
+        });
     });
+}
+
+const UpdateServerForm = function(name) {
+    elem = document.getElementById(name).innerHTML;
+    server_job_list = document.getElementById('config_server_job_list');
+
+    if (!elem || !server_job_list) {
+        return;
+    }
+
+    $('div[name="config_server_select_input"]').remove();
+    $(elem).insertBefore(server_job_list);
 }
 
 const ConfigServerJobOnChange = function (evnt) {
@@ -912,51 +1066,24 @@ const ConfigServerJobOnChange = function (evnt) {
             break;
 
         case '1':
-            elem = document.getElementById('config_server_ping_c_1_script').innerHTML;
-            server_job_list = document.getElementById('config_server_job_list');
-
-            if (!elem || !server_job_list) {
-                return;
-            }
-
-            $('div[name="config_server_select_input"]').remove();
-            $(elem).insertBefore(server_job_list);
+            UpdateServerForm('config_server_ping_c_1_script');
             break;
 
         case '200':
-            elem = document.getElementById('config_server_start_udp_server_script').innerHTML;
-            server_job_list = document.getElementById('config_server_job_list');
-
-            if (!elem || !server_job_list) {
-                return;
-            }
-
-            $('div[name="config_server_select_input"]').remove();
-            $(elem).insertBefore(server_job_list);
+            UpdateServerForm('config_server_start_udp_server_script');
             break;
 
         case '201':
-            elem = document.getElementById('config_server_start_tcp_server_script').innerHTML;
-            server_job_list = document.getElementById('config_server_job_list');
-
-            if (!elem || !server_job_list) {
-                return;
-            }
-
-            $('div[name="config_server_select_input"]').remove();
-            $(elem).insertBefore(server_job_list);
+            UpdateServerForm('config_server_start_tcp_server_script');
             break;
 
         case '202':
-            elem = document.getElementById('config_server_block_tcp_udp_port_script').innerHTML;
-            server_job_list = document.getElementById('config_server_job_list');
-
-            if (!elem || !server_job_list) {
-                return;
-            }
-
-            $('div[name="config_server_select_input"]').remove();
-            $(elem).insertBefore(server_job_list);
+            UpdateServerForm('config_server_block_tcp_udp_port_script');
+            break;
+        
+        case '203':
+            UpdateServerForm('config_server_add_dhcp_server_script');
+            FillDeviceSelectIntf('#config_server_add_dhcp_interface_select_iface_field', '#server_id', "Выберите линк", false)
             break;
 
         default:
@@ -996,7 +1123,7 @@ const UpdateRouterForm = function(name) {
     $(elem).insertBefore(router_job_list);
 }
 
-const FillRouterSelect = function(select_id, field_msg = 'Интерфейс начальной точки', return_ip = true) {
+const FillDeviceSelectIntf = function(select_id, device, field_msg = 'Интерфейс начальной точки', return_ip = true) {
     /**
     * Fill select element with network hosts.
     * @param  {String} select_id ID(name) of the element to which you need to add data.
@@ -1005,34 +1132,34 @@ const FillRouterSelect = function(select_id, field_msg = 'Интерфейс н�
    */
 
     // configured router id
-    router_id = $('#router_id')[0].value;
+    device_id = $(device)[0].value;
 
-    if (!router_id) {
-        console.log("Не нашел router_id");
+    if (!device_id) {
+        console.log("Не нашел device_id");
         return
     }
 
-    router_node = nodes.find(n => n.data.id === router_id);
+    device_node = nodes.find(n => n.data.id === device_id);
+    device_type = device.slice(1, -3 ) //example : #router_id  -> router
     
-    if (!router_node) {
-        console.log("Не нашел router_node");
+    if (!device_node) {
+        console.log("Не нашел device_node");
         return;
     }
 
-    if (!router_node.interface.length) {
+    if (!device_node.interface.length) {
         $(select_id).append('<option selected value="0">Мало интерфейсов</option>');
         return;
     } else {
         $(select_id).append(`<option selected value="0">${field_msg}</option>`);
     }
-
     $(select_id).on('change', function () {
         let selectedOption = $(this).find('option:selected'); // Получаем выбранный элемент
         let selectedLabel = selectedOption.text(); // Получаем текст выбранного элемента
-        document.getElementById('router_connection_host_label_hidden').value = selectedLabel; // Записываем его в скрытое поле
+        document.getElementById(device_type + '_connection_host_label_hidden').value = selectedLabel; // Записываем его в скрытое поле
     });
 
-    router_node.interface.forEach(function(iface) {
+    device_node.interface.forEach(function(iface) {
         // iterating over the router interfaces
 
         let iface_id = iface.id;
@@ -1064,18 +1191,20 @@ const FillRouterSelect = function(select_id, field_msg = 'Интерфейс н�
             return;
         }
 
-        let router_connection = (router_node.data.id === edge_target) ? edge_source : edge_target;
+        let device_connection = (device_node.data.id === edge_target) ? edge_source : edge_target;
 
-        let router_connection_host_node = nodes.find(n => n.data.id === router_connection);
-        let router_connection_host_label = (router_connection_host_node) ? router_connection_host_node.data.label : "Unknown";
+        let device_connection_host_node = nodes.find(n => n.data.id === device_connection);
+        let device_connection_host_label = (device_connection_host_node) ? device_connection_host_node.data.label : "Unknown";
 
-        $(select_id).append('<option value="' + (return_ip ? iface_ip : iface_id) + '">' + router_connection_host_label + '</option>');
+        $(select_id).append('<option value="' + (return_ip ? iface_ip : iface_id) + '">' + device_connection_host_label + '</option>');
 
     });
 }
 
+
 const DisableVXLANInputs = function (n) {
     var modalId = 'VxlanConfigModal' + n.data.id;
+
 
     $(document).ready(function () {
         $('#config_button_vxlan').prop('disabled', false);
@@ -1093,4 +1222,280 @@ const DisableVXLANInputs = function (n) {
 
         $('#' + modalId).off('hidden.bs.modal.myNamespace');
     });
+};
+
+// ========== DEVICE-SPECIFIC COMMAND EDITING ==========
+
+/// Edit job in host
+const EditJobInHost = function(host_id, job_id, network_guid) {
+    const job = jobs.find(j => j.id === job_id);
+
+    if (!job) {
+        console.error('Job not found:', job_id);
+        return;
+    }
+
+    EnterEditMode('host', job_id, job.job_id);
+
+    // Set the select field to the job type
+    const selectField = document.getElementById('config_host_job_select_field');
+    if (selectField) {
+        selectField.value = job.job_id.toString();
+
+        // Trigger change event to show the form
+        const event = new Event('change');
+        selectField.dispatchEvent(event);
+
+        // Fill in the form fields with job data
+        setTimeout(() => {
+            switch(job.job_id.toString()) {
+                case '1': // ping (1 пакет)
+                    $('#config_host_ping_c_1_ip').val(job.arg_1 || '');
+                    break;
+                case '2': // ping (с опциями)
+                    $('#config_host_ping_with_options_options_input_field').val(job.arg_1 || '');
+                    $('#config_host_ping_with_options_ip_input_field').val(job.arg_2 || '');
+                    break;
+                case '5': // traceroute (с опциями)
+                    $('#config_host_traceroute_with_options_options_input_field').val(job.arg_1 || '');
+                    $('#config_host_traceroute_with_options_ip_input_field').val(job.arg_2 || '');
+                    break;
+                case '3': // Отправить данные (UDP)
+                    $('#config_host_send_udp_data_size_input_field').val(job.arg_1 || '');
+                    $('#config_host_send_udp_data_ip_input_field').val(job.arg_2 || '');
+                    $('#config_host_send_udp_data_port_input_field').val(job.arg_3 || '');
+                    break;
+                case '4': // Отправить данные (TCP)
+                    $('#config_host_send_tcp_data_size_input_field').val(job.arg_1 || '');
+                    $('#config_host_send_tcp_data_ip_input_field').val(job.arg_2 || '');
+                    $('#config_host_send_tcp_data_port_input_field').val(job.arg_3 || '');
+                    break;
+                case '102': // Добавить маршрут
+                    $('#config_host_add_route_ip_input_field').val(job.arg_1 || '');
+                    $('#config_host_add_route_mask_input_field').val(job.arg_2 || '0');
+                    $('#config_host_add_route_gw_input_field').val(job.arg_3 || '');
+                    break;
+                case '103': // Добавить запись в ARP-cache
+                    $('#config_host_add_arp_cache_ip_input_field').val(job.arg_1 || '');
+                    $('#config_host_add_arp_cache_mac_input_field').val(job.arg_2 || '');
+                    break;
+                case '108': // Запросить IP адрес автоматически
+                    // No parameters needed - DHCP client request
+                    break;
+            }
+        }, 200);
+    }
+};
+
+// Edit job in router
+const EditJobInRouter = function(router_id, job_id, network_guid) {
+    const job = jobs.find(j => j.id === job_id);
+
+    if (!job) {
+        console.error('Job not found:', job_id);
+        return;
+    }
+
+    EnterEditMode('router', job_id, job.job_id);
+
+    // Set the select field to the job type
+    const selectField = document.getElementById('config_router_job_select_field');
+    if (selectField) {
+        selectField.value = job.job_id.toString();
+
+        // Trigger change event to show the form
+        const event = new Event('change');
+        selectField.dispatchEvent(event);
+
+        // Fill in the form fields with job data
+        setTimeout(() => {
+            switch(job.job_id.toString()) {
+            case '1': // ping (1 пакет)
+                UpdateRouterForm('config_router_ping_c_1_script');
+                $('#config_router_ping_c_1_ip').val(job.arg_1 || '');
+                break;
+            case '100': // Добавить IP адрес
+                UpdateRouterForm('config_router_add_ip_mask_script');
+                FillDeviceSelectIntf("#config_router_add_ip_mask_iface_select_field", '#router_id', "Выберите линк", false);
+                $('#config_router_add_ip_mask_iface_select_field').val(job.arg_1 || '');
+                $('#config_router_add_ip_mask_ip_input_field').val(job.arg_2 || '');
+                $('#config_router_add_ip_mask_mask_input_field').val(job.arg_3 || '0');
+                break;
+            case '101': // Включить NAT на интерфейсе
+                UpdateRouterForm('config_router_add_nat_masquerade_script');
+                FillDeviceSelectIntf("#config_router_add_nat_masquerade_iface_select_field", '#router_id', "Выберите линк", false);
+                $('#config_router_add_nat_masquerade_iface_select_field').val(job.arg_1 || '');
+                break;
+            case '102': // Добавить маршрут
+                UpdateRouterForm('config_router_add_route_script');
+                $('#config_router_add_route_ip_input_field').val(job.arg_1 || '');
+                $('#config_router_add_route_mask_input_field').val(job.arg_2 || '0');
+                $('#config_router_add_route_gw_input_field').val(job.arg_3 || '');
+                break;
+            case '104': // Добавить сабинтерфейс с VLAN
+                UpdateRouterForm('config_router_add_subinterface_script');
+                FillDeviceSelectIntf("#config_router_add_subinterface_iface_select_field", '#router_id', "Выберите линк", false);
+                $('#config_router_add_subinterface_iface_select_field').val(job.arg_1 || '');
+                $('#config_router_add_subinterface_ip_input_field').val(job.arg_2 || '');
+                $('#config_router_add_subinterface_mask_input_field').val(job.arg_3 || '0');
+                $('#config_router_add_subinterface_vlan_input_field').val(job.arg_4 || '1');
+                break;
+            case '105': // Добавить IPIP-интерфейс
+                UpdateRouterForm('config_router_add_ipip_tunnel_script');
+                FillDeviceSelectIntf("#config_router_add_ipip_tunnel_iface_select_ip_field", '#router_id');
+                $('#config_router_add_ipip_tunnel_iface_select_ip_field').val(job.arg_1 || '');
+                $('#config_router_add_ipip_tunnel_end_ip_input_field').val(job.arg_2 || '');
+                $('#config_router_add_ipip_tunnel_interface_ip_input_field').val(job.arg_3 || '');
+                $('#config_router_add_ipip_tunnel_interface_name_field').val(job.arg_4 || '');
+                break;
+            case '106': // Добавить GRE-интерфейс
+                UpdateRouterForm('config_router_add_gre_interface_script');
+                FillDeviceSelectIntf("#config_router_add_gre_interface_select_ip_field", '#router_id');
+                $('#config_router_add_gre_interface_select_ip_field').val(job.arg_1 || '');
+                $('#config_router_add_gre_interface_end_ip_input_field').val(job.arg_2 || '');
+                $('#config_router_add_gre_interface_ip_input_field').val(job.arg_3 || '');
+                $('#config_router_add_gre_interface_name_field').val(job.arg_4 || '');
+                break;
+            case '107': // Включить ARP Proxy на интерфейсе
+                UpdateRouterForm('config_router_add_arp_proxy_script');
+                FillDeviceSelectIntf("#config_router_add_arp_proxy_iface_select_field", '#router_id', "Выберите линк", false);
+                $('#config_router_add_arp_proxy_iface_select_field').val(job.arg_1 || '');
+                break;
+            case '109': // Добавить Port Forwarding для TCP
+                UpdateRouterForm('config_router_add_port_forwarding_tcp_script');
+                FillDeviceSelectIntf("#config_router_add_port_forwarding_tcp_iface_select_field", "#router_id", "Выберите линк", false);
+                $('#config_router_add_port_forwarding_tcp_iface_select_field').val(job.arg_1 || '');
+                $('#config_router_add_port_forwarding_tcp_port_input_field').val(job.arg_2 || '')
+                $('#config_router_add_port_forwarding_tcp_dest_ip_input_field').val(job.arg_3 || '')
+                $('#config_router_add_port_forwarding_tcp_dest_port_input_field').val(job.arg_4 || '')
+                break;
+            case '110': // Добавить Port Forwarding для UDP
+                UpdateRouterForm('config_router_add_port_forwarding_udp_script');
+                FillDeviceSelectIntf("#config_router_add_port_forwarding_udp_iface_select_field", "#router_id", "Выберите линк", false);
+                $('#config_router_add_port_forwarding_udp_iface_select_field').val(job.arg_1 || '');
+                $('#config_router_add_port_forwarding_udp_port_input_field').val(job.arg_2 || '')
+                $('#config_router_add_port_forwarding_udp_dest_ip_input_field').val(job.arg_3 || '')
+                $('#config_router_add_port_forwarding_udp_dest_port_input_field').val(job.arg_4 || '')
+                break;
+            default:
+                console.error('Unknown job type for editing:', job.job_id);
+        }
+
+        setTimeout(() => {
+            const formArea = $('div[name="config_router_select_input"]');
+            if (formArea.length > 0) {
+                formArea.addClass('editing-form-area');
+            }
+        }, 100);
+        }, 200)
+    }
+};
+
+// Edit job in server
+const EditJobInServer = function(server_id, job_id, network_guid) {
+    const job = jobs.find(j => j.id === job_id);
+
+    if (!job) {
+        console.error('Job not found:', job_id);
+        return;
+    }
+
+    EnterEditMode('server', job_id, job.job_id);
+
+    // Set the select field to the job type
+    const selectField = document.getElementById('config_server_job_select_field');
+    if (selectField) {
+        selectField.value = job.job_id.toString();
+
+        // Trigger change event to show the form
+        const event = new Event('change');
+        selectField.dispatchEvent(event);
+
+        // Fill in the form fields with job data
+        setTimeout(() => {
+            switch(job.job_id.toString()) {
+            case '1': // ping (1 пакет)
+                UpdateServerForm('config_server_ping_c_1_script');
+                $('#config_server_ping_c_1_ip').val(job.arg_1 || '');
+                break;
+            case '200': // Запустить UDP сервер
+                UpdateServerForm('config_server_start_udp_server_script');
+                $('#config_server_start_udp_server_ip_input_field').val(job.arg_1 || '');
+                $('#config_server_start_udp_server_port_input_field').val(job.arg_2 || '0');
+                break;
+            case '201': // Запустить TCP сервер
+                UpdateServerForm('config_server_start_tcp_server_script');
+                $('#config_server_start_tcp_server_ip_input_field').val(job.arg_1 || '');
+                $('#config_server_start_tcp_server_port_input_field').val(job.arg_2 || '0');
+                break;
+            case '202': // Блокировать TCP/UDP порт
+                UpdateServerForm('config_server_block_tcp_udp_port_script');
+                $('#config_server_block_tcp_udp_port_input_field').val(job.arg_1 || '0');
+                break;
+            case '203': // Запустить DHCP сервер
+                UpdateServerForm('config_server_add_dhcp_server_script');
+                FillDeviceSelectIntf('#config_server_add_dhcp_interface_select_iface_field', '#server_id', "Выберите линк", false);
+                $('#config_server_add_dhcp_ip_range_1_input_field').val(job.arg_1 || '');
+                $('#config_server_add_dhcp_ip_range_2_input_field').val(job.arg_2 || '');
+                $('#config_server_add_dhcp_mask_input_field').val(job.arg_3 || '0');
+                $('#config_server_add_dhcp_gateway_input_field').val(job.arg_4 || '');
+                $('#config_server_add_dhcp_interface_select_iface_field').val(job.arg_5 || '');
+                break;
+            default:
+                console.error('Unknown job type for editing:', job.job_id);
+        }
+
+        setTimeout(() => {
+            const formArea = $('div[name="config_server_select_input"]');
+            if (formArea.length > 0) {
+                formArea.addClass('editing-form-area');
+            }
+        }, 100);
+        }, 200)
+    }
+};
+const EditJobInSwitch = function(switch_id, job_id, network_guid) {
+    const job = jobs.find(j => j.id === job_id);
+
+    if (!job) {
+        console.error('Job not found:', job_id);
+        return;
+    }
+
+    EnterEditMode('switch', job_id, job.job_id);
+
+    // Set the select field to the job type
+    const selectField = document.getElementById('config_switch_job_select_field');
+    if (selectField) {
+        selectField.value = job.job_id.toString();
+
+        // Trigger change event to show the form
+        const event = new Event('change');
+        selectField.dispatchEvent(event);
+
+        // Fill in the form fields with job data
+        setTimeout(() => {
+            switch(job.job_id.toString()) {
+            case '6': 
+                UpdateSwitchForm('config_switch_link_down_script');
+                FillDeviceSelectIntf('#config_switch_link_down_iface_select_field','#switch_id' , "Выберете линк", false)
+                $('#config_switch_link_down_iface_select_field').val(job.arg_1 || '');
+                break;
+            case '7': 
+                UpdateSwitchForm('config_switch_sleep_script');
+                $('#config_switch_sleep').val(job.arg_1 || '');
+                break;
+            
+            default:
+                console.error('Unknown job type for editing:', job.job_id);
+        }
+
+        setTimeout(() => {
+            const formArea = $('div[name="config_switch_select_input"]');
+            if (formArea.length > 0) {
+                formArea.addClass('editing-form-area');
+            }
+        }, 100);
+        }, 200)
+    }
 };
